@@ -9,6 +9,21 @@ SET time_zone = "+00:00";
 -- --------------------------------------------------------
 
 --
+-- Table structure for table `postsSS`
+--
+
+CREATE TABLE `posts` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `category` varchar(255) NOT NULL,
+  `title` varchar(255) NOT NULL,
+  `description` text NOT NULL,
+  `posted_by` varchar(255) NOT NULL,
+  `created_date` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP(),
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+
+
+--
 -- Table structure for table `diseases`
 --
 
@@ -54,10 +69,10 @@ CREATE TABLE `symptoms` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 --
--- Table structure for table `well_being_tips`
+-- Table structure for table `tips`
 --
 
-CREATE TABLE `well_being_tips` (
+CREATE TABLE `tips` (
   `id` int(11) NOT NULL,
   `topic` varchar(255) NOT NULL,
   `tip` text DEFAULT NULL
@@ -234,7 +249,7 @@ INSERT INTO `symptoms` (`id`, `name`, `description`, `diseases`) VALUES
 -- Data for table `well_being_tips`
 --
 
-INSERT INTO `well_being_tips` (`id`, `topic`, `tip`) VALUES
+INSERT INTO `tips` (`id`, `topic`, `tip`) VALUES
 (1, "Nutrition", "Eat a balanced diet with a variety of fruits, vegetables, whole grains, and lean proteins."),
 (2, "Fitness", "Engage in regular physical activity, including cardio and strength training exercises."),
 (3, "Mental Well-Being", "Practice mindfulness and stress-reduction techniques, such as meditation and deep breathing."),

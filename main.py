@@ -1,6 +1,6 @@
 import mysql.connector
 import os
-import random
+from classes import HealthTip, Drug, Symptom, FlashCard, Disease, Post
 
 # Connect to MySQL
 connection = mysql.connector.connect(
@@ -23,118 +23,201 @@ def execute_query(query, data=None, fetch=False):
 
 # Function to get personalized health tip or quote
 def get_welcome_message():
-    return "Welcome to Healthcare Hub! Stay healthy and informed."
+    return "Welcome to Healthcare Hub! Stay healthy and informed.\n"
 
 # Function to display the main menu
 def display_menu():
-    print("\nHealthcare Hub Console Application\n\n")
+    print("\nHealthcare Hub Console Application\n")
     print("1. Disease Information")
     print("2. Symptom Exploration")
     print("3. Drug Exploration")
     print("4. Educational Flashcards")
-    print("5. Daily Well-Being Tips")
-    print("6. Random tip")
-    print("7. Exit")
-    print("\n\n")
-
+    print("5. Random Health Tip")
+    print("6. Posts Expoloration")
+    print("7. Share Post")
+    print("8. Exit\n")
 
 def get_random_health_tip():
-    query = "SELECT * FROM well_being_tips ORDER BY RAND() LIMIT 1"
-    cursor.execute(query)
-    result = cursor.fetchone()
+    query = "SELECT * FROM tips ORDER BY RAND() LIMIT 1"
+    result = execute_query(query, fetch=True)
 
     if result:
-        return f"\nHealth Tip: {result[1]}\n{result[2]}\n"
+        tip = HealthTip(result[0])
+        tip.print()
     else:
-        return "\nNo health tips available at the moment.\n"
+        print("No health tips available at the moment.\n")
 
-# Function to handle disease information
-def get_disease_info():
-    disease_name = input("Enter the name of the disease: ")
-    query = "SELECT * FROM diseases WHERE name = %s"
-    result = execute_query(query, (disease_name,), fetch=True)
+def get_user_input(prompt):
+    return input(prompt).strip()
 
-    if result:
-        print(result)
+def explore_next_action(category):
+    print("\nNEXT ACTIONS")
+    print("0. Go to Homepage")
+    print("1. Type in a text to search again")
+    print("Press Enter to generate a random", category)
+    choice = get_user_input("\nChoose an action: ")
+
+    clear_screen()
+
+    if choice == "0":
+        display_menu()
     else:
-        print("Disease not found.")
+        column = "category" if category == "flashcard" else ("topic" if category == "tip" else "name")
+        search_and_filter(category, choice, not bool(choice), column)
 
-# Function to handle symptom exploration
-def explore_symptoms():
-    search_and_filter("symptom")
+def search_and_filter(category, term="", by_random=False, column="name"):
+    if not term and not by_random:
+        term = get_user_input(f"Enter the {category} you want to search for: ")
 
-# Function to handle drug exploration
-def explore_drugs():
-    search_and_filter("drug")
-
-# Function to generate educational flashcards
-def generate_flashcards():
-    category = input("Enter the subject category (e.g., endometriosis, renal diseases): ")
-    query = "SELECT * FROM flashcards WHERE category = %s"
-    results = execute_query(query, (category,), fetch=True)
+    query = f"SELECT * FROM {category}s ORDER BY RAND() LIMIT 1" if by_random else f"SELECT * FROM {category}s WHERE {column} LIKE %s"
+    results = execute_query(query, (f'%{term}%',), fetch=True) if not by_random else execute_query(query, fetch=True)
 
     if results:
         for result in results:
-            print(result)
-    else:
-        print("No flashcards found for the specified category.")
-
-# Function to provide daily well-being tips
-def get_daily_tips():
-    topic = input("Enter the well-being topic (e.g., nutrition, fitness, mental well-being): ")
-    query = "SELECT * FROM well_being_tips WHERE topic = %s"
-    results = execute_query(query, (topic,), fetch=True)
-
-    if results:
-        for result in results:
-            print(result)
-    else:
-        print("No tips found for the specified topic.")
-
-# Function to search and filter information
-def search_and_filter(category):
-    search_term = input(f"Enter the {category} you want to search for: ")
-    query = f"SELECT * FROM {category}s WHERE name LIKE %s"
-    results = execute_query(query, (f'%{search_term}%',), fetch=True)
-
-    if results:
-        for result in results:
-            print(result)
+            # Create object based on category and call print function
+            if category == "disease":
+                disease = Disease(result)
+                disease.print()
+            elif category == "symptom":
+                symptom = Symptom(result)
+                symptom.print()
+            elif category == "drug":
+                drug = Drug(result)
+                drug.print()
+            elif category == "flashcard":
+                flashcard = FlashCard(result)
+                flashcard.print()
+            elif category == "tip":
+                tip = HealthTip(result)
+                tip.print()
     else:
         print(f"No {category}s found.")
 
+    explore_next_action(category)
 
-# Function to search and filter information
 def clear_screen():
-    input("Press Enter to continue...")
-    os.system('cls' if os.name == 'nt' else 'clear')  # Clear screen based on OS
+    os.system('cls' if os.name == 'nt' else 'clear')
+
+# Function to share health information
+def share_post():
+    clear_screen()
+    print("\nShare Health Information\n\n")
+    category = get_user_input("Enter the category: ")
+    title = get_user_input("Enter the title: ")
+    description = get_user_input("Enter the description: ")
+    posted_by = get_user_input("Enter your name: ")
+
+    # Check if any input is empty
+    if not all([category, title, description, posted_by]):
+        print("\nError: All fields must be filled. Please try again.\n")
+    else:
+
+    # Insert data into the shared_health_info table
+        query = "INSERT INTO posts (category, title, description, posted_by) VALUES (%s, %s, %s, %s)"
+        data = (category, title, description, posted_by)
+        execute_query(query, data)
+
+        print("\n\nHealth information shared successfully!")
+
+    print("\n\nNEXT ACTION")
+    print("1. Share another post")
+    print("Or any key to go to homepage")
+    choice = get_user_input(f"Enter your choice ")
+
+    clear_screen()
+
+    if (choice=="1"):
+        share_post()
+    else:
+        display_menu()
+
+
+def single_post(id=""):
+    clear_screen()
+    query =  f"SELECT * FROM posts ORDER BY RAND() LIMIT 1" if id=="" else f"SELECT * FROM posts WHERE id = %s"
+    results = execute_query(query, (f"{id}",), fetch=True) if id!="" else execute_query(query, fetch=True)
+    if results:
+        for result in results:
+            post = Post(result)
+            post.print()
+    else:
+        print(f"No post found.")
+    posts_next_actions()
+
+
+def posts_next_actions():
+    print(" ")
+    print(" ")
+    print("NEXT ACTION")
+    print("Enter id to read more")
+    print("Or keyword to search")
+    print("Or press enter key to go home\n")
+
+    choice = get_user_input('Enter yout choice: ')
+
+    if choice=="":
+        display_menu()
+    elif choice.isdigit():
+        single_post(choice)
+    else:
+        posts(choice)
+    
+
+
+
+def posts(term=""):
+    clear_screen()
+    query = f"SELECT * FROM posts" if term == "" else f"SELECT * FROM posts WHERE category LIKE %s OR title LIKE %s"
+    results = execute_query(query, (f'%{term}%',f'%{term}%'), fetch=True) if term != "" else execute_query(query, fetch=True)
+
+    if results:
+        for result in results:
+            print(f"|{result[0]}. {result[1]}")
+            print(f"|{result[2]}")
+            print(" ")
+
+
+
+
+    else:
+        print(f"No posts found.")
+    
+    posts_next_actions()
+
+
+    
+
+
 
 # Main program loop
 while True:
     print(get_welcome_message())
     display_menu()
 
-    choice = input("Enter your choice (1-6): ")
+    choice = get_user_input("Enter your choice (1-8): ")
     print("\n")
 
-    if choice == "1":
-        get_disease_info()
-    elif choice == "2":
-        explore_symptoms()
-    elif choice == "3":
-        explore_drugs()
-    elif choice == "4":
-        generate_flashcards()
-    elif choice == "5":
-        get_daily_tips()
-    elif choice == "6":
-        print(get_random_health_tip())
-    elif choice == "7":
+    if choice == "8":
         print("Exiting Healthcare Hub. Goodbye!")
         break
+    elif choice == "7":
+        share_post()
+    elif choice == "6":
+        posts()
+
     else:
-        print("Invalid choice. Please enter a number between 1 and 6.")
-    
+        clear_screen()
+        column = "category" if choice == "4" else ("topic" if choice == "5" else "name")
+
+        if choice < "6" and len(choice) > 0:
+            search_and_filter(category="disease" if choice == "1" else
+                    "symptom" if choice == "2" else
+                    "drug" if choice == "3" else
+                    "flashcard" if choice == "4" else
+                    "tip" if choice == "5" else "",
+            by_random=(choice == "5"), column=column
+        )
+
     clear_screen()
 
 # Close the cursor and connection
