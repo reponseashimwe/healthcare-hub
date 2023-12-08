@@ -138,6 +138,6 @@ class Post(Base):
         self.line()
         self.format_and_print(self.description)
         self.printleftline(f"BY:   {self.person}")
-        self.printleftline(f"BY:   {self.created_date}")
+        self.printleftline(f"ON:   {self.created_date}")
         self.line()
         self.newline(2)
